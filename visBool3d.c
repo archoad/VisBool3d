@@ -418,7 +418,8 @@ void init(void) {
 	glDepthFunc(GL_LESS);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); // paramétrage du canal alpha
 	glShadeModel(GL_SMOOTH);
-	glClearColor(0.1, 0.1, 0.1, 1.0); // définition de la couler de fond
+	//glClearColor(0.1, 0.1, 0.1, 1.0); // définition de la couler de fond
+	glClearColor(0.95, 0.95, 0.95, 1.0); // définition de la couler de fond
 	drawObject();
 }
 
