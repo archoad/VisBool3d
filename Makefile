@@ -20,15 +20,13 @@ ifeq ($(UNAME_S),Darwin)
 	COMPIL=$(CL)
 endif
 GL_FLAGS= -lGL -lGLU -lglut
-NET_FLAGS= -lnet -lpcap
 MATH_FLAGS= -lm
-AES_FLAGS= -lcrypto
 PNG_FLAGS= -lpng
 
 all: dest_sys visBool3d
 
 visBool3d: visBool3d.c
-	$(COMPIL) $(CFLAGS) $(IFLAGSDIR) $(LFLAGSDIR) $(GL_FLAGS) $< -o $@
+	$(COMPIL) $(CFLAGS) $(IFLAGSDIR) $(LFLAGSDIR) $(GL_FLAGS) $(MATH_FLAGS) $(PNG_FLAGS) $< -o $@
 
 dest_sys:
 	@echo "Destination system:" $(UNAME_S)

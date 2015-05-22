@@ -20,24 +20,24 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301, USA.*/
 #include <string.h>
 #include <time.h>
 #include <math.h>
+#include <png.h>
 
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <GL/glut.h>
 
-#define WINDOW_TITLE_PREFIX "My OpenGL program"
+#define WINDOW_TITLE_PREFIX "Visualize Boolean"
 #define couleur(param) printf("\033[%sm",param)
 
-typedef struct _bar bar;
-struct _bar {
-	long x;
-	long y;
-	long h;
-};
+
+typedef struct _bar {
+	long x, y, h;
+	GLfloat r, g, b;
+} bar;
 
 
-static short winSizeW = 800,
-	winSizeH = 600,
+static short winSizeW = 920,
+	winSizeH = 690,
 	frame = 0,
 	currentTime = 0,
 	timebase = 0,
@@ -47,7 +47,8 @@ static short winSizeW = 800,
 
 
 static int textList = 0,
-	objectList = 0;
+	objectList = 0,
+	cpt = 0;
 
 
 static float fps = 0.0,
@@ -81,9 +82,35 @@ void usage(void) {
 }
 
 
+void takeScreenshot(char *filename) {
+	FILE *fp = fopen(filename, "wb");
+	int width = glutGet(GLUT_WINDOW_WIDTH);
+	int height = glutGet(GLUT_WINDOW_HEIGHT);
+	png_structp png = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+	png_infop info = png_create_info_struct(png);
+	unsigned char *buffer = calloc((width * height * 3), sizeof(unsigned char));
+	int i;
+
+	glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, (GLvoid *)buffer);
+	png_init_io(png, fp);
+	png_set_IHDR(png, info, width, height, 8, PNG_COLOR_TYPE_RGB, PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
+	png_write_info(png, info);
+	for (i=0; i<height; i++) {
+		png_write_row(png, &(buffer[3*width*((height-1) - i)]));
+	}
+	png_write_end(png, NULL);
+	png_destroy_write_struct(&png, &info);
+	free(buffer);
+	fclose(fp);
+	printf("INFO: Save screenshot on %s (%d x %d)\n", filename, width, height);
+}
+
+
 void drawString(float x, float y, float z, char *text) {
 	unsigned i = 0;
 	glPushMatrix();
+	glLineWidth(1.0);
+	glColor3f(0.0, 0.0, 0.0);
 	glTranslatef(x, y, z);
 	glScalef(0.01, 0.01, 0.01);
 	for(i=0; i < strlen(text); i++) {
@@ -111,59 +138,61 @@ void drawAxes(void) {
 	float rayon = 0.1;
 	float length = 100/4.0;
 
+	// cube
 	glPushMatrix();
+	glLineWidth(1.0);
 	glColor3f(0.8, 0.8, 0.8);
 	glTranslatef(0.0, 0.0, 0.0);
-	glutWireCube(100/2.0);
+	glutWireCube(100.0/2.0);
 	glPopMatrix();
 
+	// origin
+	glPushMatrix();
 	glColor3f(1.0, 1.0, 1.0);
 	glutSolidSphere(rayon*4, 16, 16);
+	glPopMatrix();
 
+	// x axis
 	glPushMatrix();
-	glColor4f(1.0, 0.0, 0.0, 1.0);
+	glColor3f(1.0, 0.0, 0.0);
 	glTranslatef(length/2.0, 0.0, 0.0);
-	glScalef(length*2, rayon*5, rayon*5);
-	glutSolidCube(rayon*5);
+	glScalef(length*5.0, 1.0, 1.0);
+	glutSolidCube(rayon*2.0);
+	glPopMatrix();
+	glPushMatrix();
+	glTranslatef(length, 0.0, 0.0);
+	glRotated(90, 0, 1, 0);
+	glutSolidCone(rayon*2, rayon*4, 8, 8);
 	glPopMatrix();
 	drawString(length+2.0, 0.0, 0.0, "X");
 
+	// y axis
 	glPushMatrix();
-	glColor4f(0.0, 1.0, 0.0, 1.0);
+	glColor3f(0.0, 1.0, 0.0);
 	glTranslatef(0.0, length/2.0, 0.0);
-	glScalef(rayon*5, length*2, rayon*5);
-	glutSolidCube(rayon*5);
+	glScalef(1.0, length*5.0, 1.0);
+	glutSolidCube(rayon*2.0);
+	glPopMatrix();
+	glPushMatrix();
+	glTranslatef(0.0, length, 0.0);
+	glRotated(90, -1, 0, 0);
+	glutSolidCone(rayon*2, rayon*4, 8, 8);
 	glPopMatrix();
 	drawString(0.0, length+2.0, 0.0, "Y");
 
+	// z axis
 	glPushMatrix();
-	glColor4f(0.0, 0.0, 1.0, 1.0);
+	glColor3f(0.0, 0.0, 1.0);
 	glTranslatef(0.0, 0.0, length/2.0);
-	glScalef(rayon*5, rayon*5, length*2);
-	glutSolidCube(rayon*5);
+	glScalef(1.0, 1.0, length*5.0);
+	glutSolidCube(rayon*2.0);
 	glPopMatrix();
-	drawString(0.0, 0.0, length+2.0, "Z");
-
 	glPushMatrix();
-	glColor4f(1.0, 0.0, 0.0, 1.0);
-	glTranslatef(length, 0.0, 0.0);
-	glRotated(90, 0, 1, 0);
-	glutSolidCone(rayon*4, rayon*8, 16, 16);
-	glPopMatrix();
-
-	glPushMatrix();
-	glColor4f(0.0, 1.0, 0.0, 1.0);
-	glTranslatef(0.0, length, 0.0);
-	glRotated(90, -1, 0, 0);
-	glutSolidCone(rayon*4, rayon*8, 16, 16);
-	glPopMatrix();
-
-	glPushMatrix();
-	glColor4f(0.0, 0.0, 1.0, 1.0);
 	glTranslatef(0.0, 0.0, length);
 	glRotated(90, 0, 0, 1);
-	glutSolidCone(rayon*4, rayon*8, 16, 16);
+	glutSolidCone(rayon*2, rayon*4, 8, 8);
 	glPopMatrix();
+	drawString(0.0, 0.0, length+2.0, "Z");
 }
 
 
@@ -197,15 +226,11 @@ void drawCube(long x, long y, long h) {
 void drawObject(void) {
 	unsigned long i = 0;
 	objectList = glGenLists(1);
-	glNewList(objectList, GL_COMPILE);
+	glNewList(objectList, GL_COMPILE_AND_EXECUTE);
 	glLineWidth(1.0);
 	for (i=0; i<pow(sampleSize, 2); i++) {
 		glPushMatrix();
-		if ((barsList[i].x % 2) ^ (barsList[i].y % 2)) {
-			glColor3f(0.733, 0.640, 0.430);
-		} else {
-			glColor3f(0.170, 0.290, 0.380);
-		}
+		glColor3f(barsList[i].r, barsList[i].g, barsList[i].b);
 		if (strcmp(barOrCube, "bar") == 0) {
 			drawBar(barsList[i].x, barsList[i].y, barsList[i].h);
 		} else if (strcmp(barOrCube, "cube") == 0) {
@@ -300,6 +325,7 @@ void onMouse(int button, int state, int x, int y) {
 
 
 void onKeyboard(unsigned char key, int x, int y) {
+	char *name = malloc(20 * sizeof(char));
 	switch (key) {
 		case 27: // Escape
 			printf("INFO: exit\n");
@@ -347,9 +373,16 @@ void onKeyboard(unsigned char key, int x, int y) {
 			zoom += 5.0;
 			printf("INFO: zoom = %f\n", zoom);
 			break;
+		case 'p':
+			printf("INFO: take a screenshot\n");
+			sprintf(name, "capture_%.3d.png", cpt);
+			takeScreenshot(name);
+			cpt += 1;
+			break;
 		default:
 			break;
 	}
+	free(name);
 	glutPostRedisplay();
 }
 
@@ -398,26 +431,33 @@ void display(void) {
 
 
 void init(void) {
-	GLfloat modelAmbient[] = {0.5, 0.5, 0.5, 1.0};
-	GLfloat ambient[] = {0.0, 0.0, 0.0, 1.0};
-	GLfloat diffuse[] = {1.0, 1.0, 1.0, 1.0};
-	GLfloat specular[] = {1.0, 1.0, 1.0, 1.0};
-	GLfloat position[] = {zoom/2, 0.0, zoom};
-	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, modelAmbient);
-	glLightfv(GL_LIGHT0, GL_AMBIENT, ambient);
-	glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuse);
-	glLightfv(GL_LIGHT0, GL_SPECULAR, specular);
+	GLfloat position[] = {0.0, 0.0, 0.0, 1.0};
 	glLightfv(GL_LIGHT0, GL_POSITION, position);
-	glEnable(GL_LIGHT0);
+
+	GLfloat modelAmbient[] = {0.5, 0.5, 0.5, 1.0};
+	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, modelAmbient);
+
 	glEnable(GL_LIGHTING);
-	glEnable(GL_AUTO_NORMAL);
-	glEnable(GL_NORMALIZE);
-	glEnable(GL_DEPTH_TEST); // mise en oeuvre du z-buffer
-	glEnable(GL_BLEND); // activation du canal alpha
+	glEnable(GL_LIGHT0);
 	glEnable(GL_COLOR_MATERIAL);
-	glDepthFunc(GL_LESS);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); // paramétrage du canal alpha
+	glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE);
+	
 	glShadeModel(GL_SMOOTH);
+	glEnable(GL_DEPTH_TEST);
+
+	GLfloat no_mat[] = {0.0, 0.0, 0.0, 1.0};
+	GLfloat mat_diffuse[] = {0.1, 0.5, 0.8, 1.0};
+	GLfloat mat_specular[] = {1.0, 1.0, 1.0, 1.0};
+	GLfloat shininess[] = {128.0};
+	glMaterialfv(GL_FRONT, GL_AMBIENT, no_mat);
+	glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse);
+	glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
+	glMaterialfv(GL_FRONT, GL_SHININESS, shininess);
+	glMaterialfv(GL_FRONT, GL_EMISSION, no_mat);
+
+	glEnable(GL_NORMALIZE);
+	glEnable(GL_AUTO_NORMAL);
+	glDepthFunc(GL_LESS);
 	//glClearColor(0.1, 0.1, 0.1, 1.0); // définition de la couler de fond
 	glClearColor(0.95, 0.95, 0.95, 1.0); // définition de la couler de fond
 	drawObject();
@@ -427,7 +467,7 @@ void init(void) {
 void glmain(int argc, char *argv[]) {
 	glutInit(&argc, argv);
 	glutInitWindowSize(winSizeW, winSizeH);
-	glutInitWindowPosition(100, 100);
+	glutInitWindowPosition(120, 10);
 	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);
 	glutCreateWindow(WINDOW_TITLE_PREFIX);
 	init();
@@ -454,6 +494,15 @@ void booleanFunction(void) {
 		for (y=0; y<sampleSize; y++) {
 			temp.x = x;
 			temp.y = y;
+			if ((temp.x % 2) ^ (temp.y % 2)) {
+				temp.r = 0.733;
+				temp.g = 0.640;
+				temp.b = 0.430;
+			} else {
+				temp.r = 0.170;
+				temp.g = 0.290;
+				temp.b = 0.380;
+			}
 			if (strcmp(func, "xor") == 0) {
 				temp.h = x ^ y;
 			} else if (strcmp(func, "and") == 0) {
