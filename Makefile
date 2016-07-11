@@ -1,6 +1,6 @@
 # définition des cibles particulières
 .PHONY: clean, mrproper
-  
+
 # désactivation des règles implicites
 .SUFFIXES:
 
@@ -8,7 +8,7 @@ UNAME_S:=$(shell uname -s)
 
 CC=gcc
 CL=clang
-CFLAGS= -O3 -Wall -W -Wstrict-prototypes -Werror
+CFLAGS= -O3 -Wall -W -Wstrict-prototypes -Werror -Wextra -Wuninitialized
 ifeq ($(UNAME_S),Linux)
 	IFLAGSDIR= -I/usr/include
 	LFLAGSDIR= -L/usr/lib
@@ -33,4 +33,3 @@ dest_sys:
 
 clean:
 	@rm -f visBool3d
-

@@ -122,7 +122,7 @@ void drawString(float x, float y, float z, char *text) {
 
 void drawText(void) {
 	char text1[50], text2[70];
-	sprintf(text1, "Michel Dubois (c) 2013, dt: %1.3f, FPS: %4.2f", (dt/1000.0), fps);
+	sprintf(text1, "dt: %1.3f, FPS: %4.2f", (dt/1000.0), fps);
 	sprintf(text2, "Size length: %ld, Function: %s", sampleSize, func);
 	textList = glGenLists(1);
 	glNewList(textList, GL_COMPILE);
@@ -441,7 +441,7 @@ void init(void) {
 	glEnable(GL_LIGHT0);
 	glEnable(GL_COLOR_MATERIAL);
 	glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE);
-	
+
 	glShadeModel(GL_SMOOTH);
 	glEnable(GL_DEPTH_TEST);
 
@@ -553,8 +553,6 @@ int main(int argc, char *argv[]) {
 		default:
 			usage();
 			exit(EXIT_FAILURE);
-			break;	
+			break;
 		}
 }
-
-
