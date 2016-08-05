@@ -43,7 +43,7 @@ static short winSizeW = 920,
 	timebase = 0,
 	fullScreen = 0,
 	rotate = 0,
-	dt = 5; // in milliseconds
+	dt = 20; // in milliseconds
 
 
 static int textList = 0,
@@ -394,6 +394,8 @@ void onTimer(int event) {
 		default:
 			break;
 	}
+	prevx = 0.0;
+	prevy = 0.0;
 	if (rotate) {
 		rotz -= 0.2;
 	} else {
@@ -401,7 +403,7 @@ void onTimer(int event) {
 	}
 	if (rotz > 360) rotz = 360;
 	glutPostRedisplay();
-	glutTimerFunc(dt, onTimer, 1);
+	glutTimerFunc(dt, onTimer, 0);
 }
 
 
